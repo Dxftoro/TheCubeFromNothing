@@ -1,1 +1,1 @@
-"# TheCubeFromNothing" 
+# TheCubeFromNothing
