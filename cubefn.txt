@@ -1,0 +1,5 @@
+megs: 32
+floppya: 1_44=bin/cubefn.bin, status=inserted
+boot: floppy
+log: bin/cubefn_bochs.log
+mouse: enabled=0
