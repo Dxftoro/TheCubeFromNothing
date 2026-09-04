@@ -47,13 +47,26 @@ start:
 	mov ax, VIDEO_MEM
 	mov es, ax
 	
-	putchar 10, 10, '#', COLOR_LIGHT_BLUE
+	call draw_vertices
 	
 	jmp $
 
 ; =======================================================
 ; Functions
 ; =======================================================
+
+draw_vertices:
+	mov cx, 0
+	
+	.vert_pass:	cmp cx, 7
+		mov ax, [cube_x + cx] 
+		cwd
+		imul dist
+		
+		inc cx
+		jne .vert_pass
+	
+	putchar 10, 10, '#', COLOR_LIGHT_BLUE
 
 ; args: byte angle_index (al)
 tsin:
@@ -92,13 +105,21 @@ clear_screen:
 	ret
 
 ; =======================================================
-; Sine table
+; Data
 ; =======================================================
 sin_table:
 	db 0x00,0x14,0x26,0x38,0x47,0x53,0x5C,0x62
 	db 0x64,0x62,0x5C,0x53,0x47,0x38,0x26,0x14
 	db 0x00,0xEC,0xDA,0xC8,0xB9,0xAD,0xA4,0x9E
 	db 0x9C,0x9E,0xA4,0xAD,0xB9,0xC8,0xDA,0xEC
+
+cube_x	db 10, 10, 10, 10, -10, -10, -10, -10
+cube_y	db 10, 10, -10, -10, 10, 10, -10, -10
+cube_z	db 10, -10, 10, -10, 10, -10, 10, -10
+
+screen_x	db 0
+screen_y	db 0
+dist 		db 10
 
 times 510-($-$$) db 0
 dw 0xAA55
