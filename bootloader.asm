@@ -63,9 +63,10 @@ start:
 	
 		mov ax, VIDEO_MEM
 		mov es, ax
-			
+		
 		call rotate_cube
-		call draw_vertices
+		call project_to_screen
+		call draw_edges
 	
 		; 1ms delay
 		delay 0x0003, 0x0D40
@@ -145,9 +146,48 @@ rotate_vertex:
 ; Perspective projection:
 ; sx = x * DIST / (z + DIST) + CENTER_X
 ; sy = y * DIST / (z + DIST) + CENTER_Y
-draw_vertices:
+;draw_vertices:
+;	mov cx, 8
+;	mov si, rotated_verticies
+;	
+;	.vert_pass:
+;		; Zd = z + DIST, Zd -> bx
+;		mov al, [si + 2]
+;		cbw
+;		add ax, DIST
+;		mov bx, ax
+;		
+;		; x * DIST / Zd + CENTER_X
+;		mov al, [si]
+;		cbw
+;		imul ax, ax, DIST
+;		cwd
+;		idiv bx
+;		add ax, CENTER_X
+;		mov [screen_coords], al
+;		
+;		; y * DIST / Zd + CENTER_Y
+;		mov al, [si + 1]
+;		cbw
+;		imul ax, ax, DIST
+;		cwd
+;		idiv bx
+;		sar ax, 1
+;		add ax, CENTER_Y
+;		mov [screen_coords + 1], al
+;		
+;		mov bl, '#'
+;		mov bh, COLOR_LIGHT_BLUE
+;		call draw_pixel
+;		
+;		add si, 3
+;		loop .vert_pass
+;	ret
+
+project_to_screen:
 	mov cx, 8
 	mov si, rotated_verticies
+	mov di, screen_coords
 	
 	.vert_pass:
 		; Zd = z + DIST, Zd -> bx
@@ -163,7 +203,7 @@ draw_vertices:
 		cwd
 		idiv bx
 		add ax, CENTER_X
-		mov [screen_coords], al
+		mov [di], al
 		
 		; y * DIST / Zd + CENTER_Y
 		mov al, [si + 1]
@@ -173,14 +213,124 @@ draw_vertices:
 		idiv bx
 		sar ax, 1
 		add ax, CENTER_Y
-		mov [screen_coords + 1], al
+		mov [di + 1], al
 		
+		add si, 3
+		add di, 2
+		loop .vert_pass
+	ret
+
+draw_edges:
+	mov cx, 12
+	mov si, cube_edges
+	
+	.edge_pass:
+		lodsb
+		
+		push cx
+		push si
+		call draw_edge
+		pop si
+		pop cx
+		
+		loop .edge_pass
+	ret
+
+draw_edge:
+	; first vertex index (bl), second vertex index (bh)
+	call unpack_edge
+	
+	; first vertex offset
+	mov al, bl
+	xor ah, ah
+	shl ax, 1
+	mov si, ax
+	
+	; second vertex offset
+	mov al, bh
+	xor ah, ah
+	shl ax, 1
+	mov di, ax
+	
+	; |x0 - x1|
+	mov al, [screen_coords + si]
+	mov bl, [screen_coords + di]
+	call subabs
+	mov [dist_x], al
+	mov [sign_x], dl
+	
+	; |y0 - y1|
+	mov al, [screen_coords + si + 1]
+	mov bl, [screen_coords + di + 1]
+	call subabs
+	mov [dist_y], al
+	mov [sign_y], dl
+	
+	mov al, [screen_coords + si]
+	mov [current_pixel], al
+	mov al, [screen_coords + si + 1]
+	mov [current_pixel + 1], al
+	
+	mov al, [screen_coords + di]
+	mov [dest_x], al
+	mov al, [screen_coords + di + 1]
+	mov [dest_y], al
+	
+	; errv
+	mov al, [dist_x]
+	xor ah, ah
+	mov bx, ax
+	;
+	mov al, [dist_y]
+	xor ah, ah
+	sub bx, ax
+	mov [errv], bx
+	
+	.line_pass:
 		mov bl, '#'
 		mov bh, COLOR_LIGHT_BLUE
 		call draw_pixel
 		
-		add si, 3
-		loop .vert_pass
+		mov al, [current_pixel]
+		cmp al, [dest_x]
+		jne .step
+		
+		mov al, [current_pixel + 1]
+		cmp al, [dest_y]
+		je .done
+	.step:
+		call draw_edge_step
+		jmp .line_pass
+	.done:
+	ret
+
+draw_edge_step:
+	; -dist_y -> cx
+	xor ah, ah
+	mov al, [dist_y]
+	neg ax
+	mov cx, ax
+	
+	mov ax, [errv]
+	sal ax, 1
+	
+	cmp ax, cx
+	jle .skip_x
+		xor ch, ch
+		mov cl, [dist_y]
+		add [errv], cx ; !!!
+		mov al, [sign_x]
+		add [current_pixel], al
+	.skip_x:
+	
+	xor ch, ch
+	mov cl, [dist_x]
+	cmp ax, cx
+	jge .skip_y
+		add [errv], cx
+		mov al, [sign_y]
+		add [current_pixel + 1], al
+	.skip_y:
 	ret
 
 ; Draws a pixel with coordinates stored in screen_coords
@@ -188,9 +338,9 @@ draw_vertices:
 draw_pixel:
 	; (S_WIDTH * y + x) * 2	
 	mov ax, S_WIDTH
-	mul byte [screen_coords + 1]
+	mul byte [current_pixel + 1]
 	
-	mov dl, [screen_coords]
+	mov dl, [current_pixel]
 	xor dh, dh
 	add ax, dx
 	
@@ -200,7 +350,32 @@ draw_pixel:
 	mov byte [es:di], bl
 	mov byte [es:di + 1], bh
 	ret
+
+; args: packed edge byte (al)
+; ret: first vertex index (bl), second vertex index (bh)
+unpack_edge:
+	mov bl, al
+	and bl, 00000111b
 	
+	mov bh, al
+	shr bh, 3
+	ret
+
+; args: byte left operand (al), byte right operand (bl)
+; ret: result (al), sign (dl)
+subabs:
+	sub al, bl
+	cbw
+	
+	mov dl, al
+	shl dl, 1
+	add dl, 1
+	neg dl
+	
+	xor al, ah
+	sub al, ah
+	ret
+
 ; args: byte angle_index (al)
 ; ret: sin value (al)
 tsin:
@@ -219,15 +394,15 @@ tcos:
 	mov al, [sin_table + bx]
 	ret
 
-print_string:
-	lodsb ; ds, si will be used
-	or al, al
-	jz .done
-	mov ah, 0x0E
-	int 0x10
-	jmp print_string
-.done:
-	ret
+;print_string:
+;	lodsb ; ds, si will be used
+;	or al, al
+;	jz .done
+;	mov ah, 0x0E
+;	int 0x10
+;	jmp print_string
+;.done:
+;	ret
 
 clear_screen:
 	mov ax, VIDEO_MEM
@@ -255,13 +430,26 @@ cube_vertices	db 10, 10, 10,		10, 10, -10
 				db -10, 10, 10,		-10, 10, -10
 				db -10, -10, 10, 	-10, -10, -10
 
-rotated_verticies rb 8 * 3
-screen_coords		db 0, 0
+; packed edge indices
+cube_edges 		db 0x09, 0x10, 0x20, 0x19
+				db 0x29, 0x1A, 0x32, 0x3B
+				db 0x2C, 0x34, 0x3D, 0x3E
+
+rotated_verticies 	rb 8 * 3
+screen_coords		rb 8 * 2
+dest_x				db 0
+dest_y				db 0
+dist_x				db 0
+dist_y				db 0
+sign_x				db 0
+sign_y				db 0
 current_angle		db 0
+current_pixel		db 0, 0
 sinv				db 0
 cosv				db 0
+errv				dw 0
 
 SINE_TALBE_AMP		dw 100
 
-times 510-($-$$) db 0
+;times 510-($-$$) db 0
 dw 0xAA55
