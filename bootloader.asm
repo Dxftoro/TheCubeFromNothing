@@ -70,6 +70,9 @@ start:
 	
 		; 1ms delay
 		delay 0x0000, 0x03E8
+		
+		inc byte [current_angle]
+		and byte [current_angle], 31
 	
 		jmp .main_loop
 
