@@ -7,7 +7,6 @@ VIDEO_MEM		= 0xB800
 DIST			= 64
 CENTER_X		= 40
 CENTER_Y		= 12
-SINE_TALBE_AMP	= 100
 
 ; =======================================================
 ; Colors
@@ -69,7 +68,7 @@ start:
 		call draw_vertices
 	
 		; 1ms delay
-		delay 0x0000, 0x03E8
+		delay 0x0003, 0x0D40
 		
 		inc byte [current_angle]
 		and byte [current_angle], 31
@@ -123,6 +122,7 @@ rotate_vertex:
 	mov ax, bx
 	cwd
 	idiv word [SINE_TALBE_AMP]
+	push ax
 	
 	; rotating z
 	mov al, [si]
@@ -139,6 +139,7 @@ rotate_vertex:
 	; rotating y (do not)
 	mov bh, [si + 1]
 	
+	pop ax	
 	ret
 
 ; Perspective projection:
@@ -202,6 +203,7 @@ draw_pixel:
 ; args: byte angle_index (al)
 ; ret: sin value (al)
 tsin:
+	xor ah, ah
 	mov bx, ax
 	mov al, [sin_table + bx]
 	ret
@@ -211,6 +213,7 @@ tsin:
 tcos:
 	add al, 8
 	and al, 31
+	xor ah, ah
 	mov bx, ax
 	mov al, [sin_table + bx]
 	ret
@@ -256,6 +259,8 @@ screen_coords		db 0, 0
 current_angle		db 0
 sinv				db 0
 cosv				db 0
+
+SINE_TALBE_AMP		dw 100
 
 times 510-($-$$) db 0
 dw 0xAA55
