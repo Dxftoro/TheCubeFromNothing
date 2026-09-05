@@ -8,7 +8,12 @@ include 'macros.inc'
 ; =======================================================
 start:
 	mov [boot_drive], dl
-
+	
+	call clear_screen
+	mov si, msg_hello
+	call print_string
+	delay 0x001E, 0x8480
+	
 	mov ax, 0
 	mov ds, ax
 	mov es, ax

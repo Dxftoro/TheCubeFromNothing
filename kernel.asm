@@ -277,7 +277,7 @@ draw_edge_step:
 	jle .skip_x
 		xor ch, ch
 		mov cl, [dist_y]
-		add [errv], cx ; !!!
+		sub [errv], cx ; !!!
 		mov al, [sign_x]
 		add [current_pixel], al
 	.skip_x:
