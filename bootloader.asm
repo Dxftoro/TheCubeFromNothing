@@ -31,7 +31,7 @@ COLOR_WHITE			= 0x0F
 ; =======================================================
 ; Macros
 ; =======================================================
-macro cputchar x, y, char, attr {
+macro putchar x, y, char, attr {
 	mov di, (S_WIDTH * y + x) * 2
 	mov byte [es:di], char
 	mov byte [es:di + 1], attr
@@ -90,13 +90,34 @@ draw_vertices:
 		add ax, CENTER_Y
 		mov [screen_coords], al
 		
-		putchar [screen_coords], [screen_coords + 1], '#', COLOR_LIGHT_BLUE
+		; putchar [screen_coords], [screen_coords + 1], '#', COLOR_LIGHT_BLUE
+		mov bl, '#',
+		mov bh, COLOR_LIGHT_BLUE
+		call draw_pixel
 		
 		add si, 3
 		inc cx
 		jne .vert_pass
 	ret
 
+; Draws a pixel with coordinates stored in screen_coords
+; args: byte char (bl), byte attr (bh)
+draw_pixel:
+	; (S_WIDTH * y + x) * 2	
+	mov ax, S_WIDTH
+	mul byte [screen_coords + 1]
+	
+	mov dl, [screen_coords]
+	xor dh, dh
+	add ax, dx
+	
+	shl ax, 1
+	
+	mov di, ax
+	mov byte [es:di], bl
+	mov byte [es:di + 1], bh
+	ret
+	
 ; args: byte angle_index (al)
 tsin:
 	mov bx, ax
