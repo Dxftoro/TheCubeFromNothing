@@ -171,6 +171,7 @@ draw_vertices:
 		imul ax, ax, DIST
 		cwd
 		idiv bx
+		sar ax, 1
 		add ax, CENTER_Y
 		mov [screen_coords + 1], al
 		
