@@ -277,9 +277,12 @@ draw_edge_step:
 	jle .skip_x
 		xor ch, ch
 		mov cl, [dist_y]
-		sub [errv], cx ; !!!
+		sub [errv], cx
+		
+		push ax ; !!!
 		mov al, [sign_x]
 		add [current_pixel], al
+		pop ax
 	.skip_x:
 	
 	xor ch, ch
@@ -326,7 +329,7 @@ subabs:
 	sub al, bl
 	cbw
 	
-	mov dl, al
+	mov dl, ah
 	shl dl, 1
 	add dl, 1
 	neg dl
@@ -370,7 +373,7 @@ cube_vertices	db 10, 10, 10,		10, 10, -10
 				db -10, -10, 10, 	-10, -10, -10
 
 ; packed edge indices
-cube_edges 		db 0x09, 0x10, 0x20, 0x19
+cube_edges 		db 0x08, 0x10, 0x20, 0x19
 				db 0x29, 0x1A, 0x32, 0x3B
 				db 0x2C, 0x34, 0x3D, 0x3E
 
@@ -388,3 +391,13 @@ sign_y				db 0
 current_angle		db 0
 sinv				db 0
 cosv				db 0
+
+; start: ecx = 3, esi = 0 -> 2
+
+; *esi, 0 -> 1, ecx: 3 -> 2 != 0
+; *esi, 1 -> 2, ecx: 2 -> 1 != 0
+; *esi, 2 -> 3, ecx: 1 -> 0 = 0
+
+; ecx: 3 -> 2 != 0, *esi, 0 -> 1
+; ecx: 2 -> 1 != 0, *esi, 1 -> 2
+; ecx: 1 -> 0 = 0, *esi, 1 -> 2
