@@ -318,10 +318,10 @@ sin_table:
 	db 0x00,0xEC,0xDA,0xC8,0xB9,0xAD,0xA4,0x9E
 	db 0x9C,0x9E,0xA4,0xAD,0xB9,0xC8,0xDA,0xEC
 
-cube_vertices	db 10, 10, 10,		10, 10, -10
-				db 10, -10, 10,		10, -10, -10
-				db -10, 10, 10,		-10, 10, -10
-				db -10, -10, 10, 	-10, -10, -10
+cube_vertices	db 15, 15, 15,		15, 15, -15
+				db 15, -15, 15,		15, -15, -15
+				db -15, 15, 15,		-15, 15, -15
+				db -15, -15, 15, 	-15, -15, -15
 
 ; packed edge indices
 cube_edges 		db 0x08, 0x10, 0x20, 0x19
