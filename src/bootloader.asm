@@ -3,16 +3,25 @@ org 0x7C00
 
 include 'macros.inc'
 
-; =======================================================
-; Code
-; =======================================================
 start:
 	mov [boot_drive], dl
 	
 	call clear_screen
+	
 	mov si, msg_hello
-	call print_string
+	mov dl, 36
+	mov dh, 11
+	call print_string_at
+	
 	delay 0x001E, 0x8480
+	
+	push ax
+	push bx
+	mov dl, 0
+	mov dh, 0
+	call move_cursor_to
+	pop ax
+	pop bx
 	
 	mov ax, 0
 	mov ds, ax

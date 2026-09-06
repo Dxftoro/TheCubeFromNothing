@@ -21,8 +21,8 @@ start:
 		call project_to_screen
 		call draw_edges
 	
-		; 1ms delay
-		delay 0x0003, 0x0D40
+		; 100ms delay
+		delay 0x0001, 0x86A0
 		
 		inc byte [current_angle]
 		and byte [current_angle], 31
