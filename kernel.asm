@@ -279,10 +279,8 @@ draw_edge_step:
 		mov cl, [dist_y]
 		sub [errv], cx
 		
-		push ax ; !!!
-		mov al, [sign_x]
-		add [current_pixel], al
-		pop ax
+		mov dl, [sign_x]
+		add [current_pixel], dl
 	.skip_x:
 	
 	xor ch, ch
