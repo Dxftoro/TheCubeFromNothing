@@ -342,13 +342,3 @@ sign_y				db 0
 current_angle		db 0
 sinv				db 0
 cosv				db 0
-
-; start: ecx = 3, esi = 0 -> 2
-
-; *esi, 0 -> 1, ecx: 3 -> 2 != 0
-; *esi, 1 -> 2, ecx: 2 -> 1 != 0
-; *esi, 2 -> 3, ecx: 1 -> 0 = 0
-
-; ecx: 3 -> 2 != 0, *esi, 0 -> 1
-; ecx: 2 -> 1 != 0, *esi, 1 -> 2
-; ecx: 1 -> 0 = 0, *esi, 1 -> 2
